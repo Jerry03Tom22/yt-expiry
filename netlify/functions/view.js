@@ -32,11 +32,12 @@ exports.handler = async (event) => {
       };
     }
 
+    // Return YouTube ID only
+    const youtubeId = data.youtubeUrl.split("v=")[1];
+
     return {
-      statusCode: 302,
-      headers: {
-        Location: data.youtubeUrl
-      }
+      statusCode: 200,
+      body: JSON.stringify({ youtubeId })
     };
 
   } catch (err) {
