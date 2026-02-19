@@ -1,49 +1,32 @@
-const admin = require("firebase-admin");
+<script>
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(
-      JSON.parse(process.env.FIREBASE_KEY)
-    )
+fetch(`/.netlify/functions/view?id=${id}`)
+  .then(async res => {
+
+    if (!res.ok) {
+      const text = await res.text();
+      document.body.innerHTML = text;
+      return null;
+    }
+
+    return res.json();
+  })
+  .then(data => {
+
+    if (!data) return;
+
+    if(data.youtubeId){
+      document.getElementById("player").innerHTML =
+        `<iframe width="560" height="315"
+         src="https://www.youtube.com/embed/${data.youtubeId}"
+         frameborder="0"
+         allowfullscreen></iframe>`;
+    }
+
+  })
+  .catch(err => {
+    document.body.innerHTML = "Something went wrong";
   });
-}
-
-const db = admin.firestore();
-
-exports.handler = async (event) => {
-  try {
-    const id = event.queryStringParameters.id;
-
-    const doc = await db.collection("links").doc(id).get();
-
-    if (!doc.exists) {
-      return {
-        statusCode: 404,
-        body: "Link not found"
-      };
-    }
-
-    const data = doc.data();
-
-    if (Date.now() > data.expiry) {
-      return {
-        statusCode: 403,
-        body: "Link expired"
-      };
-    }
-
-    // Return YouTube ID only
-    const youtubeId = data.youtubeUrl.split("v=")[1];
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ youtubeId })
-    };
-
-  } catch (err) {
-    return {
-      statusCode: 500,
-      body: err.toString()
-    };
-  }
-};
+</script>
