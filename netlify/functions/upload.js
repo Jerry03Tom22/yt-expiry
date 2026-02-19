@@ -1,39 +1,40 @@
 const admin = require("firebase-admin");
+const { v4: uuidv4 } = require("uuid");
 
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(
-      JSON.parse(process.env.FIREBASE_KEY)
-    )
+    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_KEY)),
+    storageBucket: "YOUR_PROJECT_ID.appspot.com"
   });
 }
 
-const db = admin.firestore();
-
 exports.handler = async (event) => {
-  try {
-    const { youtubeUrl } = JSON.parse(event.body);
+  const { filename, expiryMinutes } = JSON.parse(event.body);
 
-    const id = Math.random().toString(36).substring(2, 8);
-    const expiry = Date.now() + 10 * 60 * 1000;
+  const id = uuidv4();
+  const filePath = `videos/${id}-${filename}`;
 
-    await db.collection("links").doc(id).set({
-      youtubeUrl,
-      expiry
-    });
+  const bucket = admin.storage().bucket();
+  const file = bucket.file(filePath);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        shortLink: `${process.env.URL}/player.html?id=${id}`
-      })
-    };
+  const uploadUrl = await file.getSignedUrl({
+    action: "write",
+    expires: Date.now() + 10 * 60 * 1000,
+    contentType: "video/mp4"
+  });
 
-  } catch (err) {
-    return {
-      statusCode: 500,
-      body: err.toString()
-    };
-  }
+  const expiresAt = Date.now() + expiryMinutes * 60 * 1000;
+
+  await admin.firestore().collection("videos").doc(id).set({
+    videoPath: filePath,
+    expiresAt: expiresAt
+  });
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      uploadUrl: uploadUrl[0],
+      id: id
+    })
+  };
 };
-
