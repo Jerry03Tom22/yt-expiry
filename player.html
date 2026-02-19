@@ -1,55 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Secure Video Player</title>
+  <style>
+    body { background:black; margin:0; }
+    video { width:100%; height:100vh; }
+  </style>
 </head>
 <body>
 
-<h2>Video Player</h2>
-
-<div id="player">Loading video...</div>
+<video id="videoPlayer" controls controlsList="nodownload"></video>
 
 <script>
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
 
-if (!id) {
-  document.getElementById("player").innerHTML = "Invalid Link";
-} else {
+fetch("/.netlify/functions/view?id=" + id)
+  .then(res => {
+    if (!res.ok) throw new Error();
+    return res.json();
+  })
+  .then(data => {
+    document.getElementById("videoPlayer").src = data.url;
+  })
+  .catch(() => {
+    document.body.innerHTML = "<h1 style='color:white;text-align:center;margin-top:20%;'>Link Expired</h1>";
+  });
 
-  fetch(`/.netlify/functions/view?id=${id}`)
-    .then(async res => {
-
-      if (!res.ok) {
-        const text = await res.text();
-        document.getElementById("player").innerHTML = text;
-        return null;
-      }
-
-      return res.json();
-    })
-    .then(data => {
-
-      if (!data) return;
-
-      if (data.youtubeId) {
-        document.getElementById("player").innerHTML =
-          `<iframe width="560" height="315"
-           src="https://www.youtube.com/embed/${data.youtubeId}"
-           frameborder="0"
-           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-           allowfullscreen>
-          </iframe>`;
-      } else {
-        document.getElementById("player").innerHTML = "Link expired or invalid";
-      }
-
-    })
-    .catch(err => {
-      document.getElementById("player").innerHTML = "Something went wrong";
-    });
-}
+document.addEventListener("contextmenu", e => e.preventDefault());
 </script>
 
 </body>
