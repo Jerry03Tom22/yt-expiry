@@ -25,7 +25,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       body: JSON.stringify({
-        shortLink: `${process.env.URL}/.netlify/functions/view?id=${id}`
+        shortLink: `${process.env.URL}/player.html?id=${id}`
       })
     };
 
@@ -36,3 +36,4 @@ exports.handler = async (event) => {
     };
   }
 };
+
