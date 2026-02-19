@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>YouTube Expiry Link Generator</title>
+</head>
+<body>
+
+<h2>YouTube Expiry Link Generator</h2>
+
+<input type="text" id="ytlink" placeholder="Paste YouTube link here" size="50">
+<br><br>
+<button onclick="generateLink()">Generate Link</button>
+
+<p id="result"></p>
+
+<script>
+async function generateLink() {
+
+  const youtubeUrl = document.getElementById("ytlink").value;
+
+  const response = await fetch("/.netlify/functions/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ youtubeUrl })
+  });
+
+  const data = await response.json();
+
+  if(data.shortLink){
+    document.getElementById("result").innerHTML =
+      `<a href="${data.shortLink}" target="_blank">${data.shortLink}</a>`;
+  } else {
+    document.getElementById("result").innerText = "Error generating link";
+  }
+}
+</script>
+
+</body>
+</html>
