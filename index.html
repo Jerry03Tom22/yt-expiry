@@ -1,37 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>YouTube Expiry Link Generator</title>
+  <title>Upload Video</title>
 </head>
 <body>
 
-<h2>YouTube Expiry Link Generator</h2>
+<h2>Upload Video with Expiry</h2>
 
-<input type="text" id="ytlink" placeholder="Paste YouTube link here" size="50">
-<br><br>
-<button onclick="generateLink()">Generate Link</button>
+<input type="file" id="videoFile"><br><br>
+<input type="number" id="expiry" placeholder="Expiry in Minutes"><br><br>
+<button onclick="uploadVideo()">Upload</button>
 
 <p id="result"></p>
 
 <script>
-async function generateLink() {
+async function uploadVideo() {
+  const file = document.getElementById("videoFile").files[0];
+  const expiry = document.getElementById("expiry").value;
 
-  const youtubeUrl = document.getElementById("ytlink").value;
+  if (!file || !expiry) {
+    alert("Select file and expiry");
+    return;
+  }
 
-  const response = await fetch("/.netlify/functions/generate", {
+  const res = await fetch("/.netlify/functions/upload", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ youtubeUrl })
+    body: JSON.stringify({
+      filename: file.name,
+      expiryMinutes: expiry
+    })
   });
 
-  const data = await response.json();
+  const data = await res.json();
 
-  if(data.shortLink){
-    document.getElementById("result").innerHTML =
-      `<a href="${data.shortLink}" target="_blank">${data.shortLink}</a>`;
-  } else {
-    document.getElementById("result").innerText = "Error generating link";
-  }
+  await fetch(data.uploadUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": file.type
+    },
+    body: file
+  });
+
+  document.getElementById("result").innerHTML =
+    "Video Link: <a href='player.html?id=" + data.id + "' target='_blank'>Open Player</a>";
 }
 </script>
 
